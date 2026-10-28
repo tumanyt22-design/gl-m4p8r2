@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Тебе письмо</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;1,300&family=Marck+Script&display=swap">
+<style>
+:root{color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:radial-gradient(circle at 20% 15%,#ff9ec466,transparent 45%),radial-gradient(circle at 85% 80%,#a78bfa77,transparent 50%),linear-gradient(180deg,#3a1a5e 0%,#7b2f7f 55%,#d86a9a 100%);color:#fff4fa;font-family:'Cormorant Garamond',Georgia,serif;overflow:hidden;touch-action:none}
+canvas{position:fixed;inset:0;width:100%;height:100%}
+body::before{content:"";position:fixed;inset:-10%;pointer-events:none;background:radial-gradient(circle,#ffffff2e 0 5px,transparent 6px) 0 0/90px 110px,radial-gradient(circle,#ffd1e83a 0 11px,transparent 12px) 40px 50px/150px 170px;animation:dr 40s linear infinite}
+@keyframes dr{to{background-position:0 -440px,40px -510px}}
+.screen{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;transition:opacity 1.2s ease}
+.hide{opacity:0;pointer-events:none}
+.hello{font-size:clamp(1.6rem,7vw,2.3rem);font-weight:300;line-height:1.4;opacity:0;animation:fi 2s .5s forwards}
+.hello i{font-family:'Marck Script',cursive;font-size:1.25em;color:#ffd6ea}
+@keyframes fi{to{opacity:1}}
+.env{position:relative;width:260px;height:170px;margin-top:50px;background:#e9e6f2;border-radius:6px;box-shadow:0 20px 50px #0008,0 0 40px #8f7bff44;opacity:0;transition:opacity 1.5s;cursor:pointer}
+.env.show{opacity:1}
+.flap{position:absolute;left:0;top:0;width:100%;height:100px;background:#d9d5ea;clip-path:polygon(0 0,100% 0,50% 100%);transform-origin:top;transition:transform .9s}
+.env.open .flap{transform:rotateX(180deg)}
+.seal{position:absolute;left:50%;top:78px;width:46px;height:46px;margin-left:-23px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#a58bff,#5b3fb5);box-shadow:0 3px 8px #0006;display:flex;align-items:center;justify-content:center;color:#e7dcff;transition:opacity .5s}
+.env.open .seal{opacity:0}
+.sub{margin-top:26px;font-family:'Marck Script',cursive;color:#ffe0f0;opacity:0;transition:opacity 1.5s;animation:pl 2.4s ease-in-out infinite}
+.sub.show{opacity:1}
+@keyframes pl{50%{transform:translateY(-4px)}}
+.paper{width:min(92vw,420px);max-height:78%;overflow:auto;background:#f7f3ee;color:#3b2f4a;border-radius:10px;padding:28px 24px;box-shadow:0 25px 60px #000a;font-family:'Marck Script',cursive;font-size:1.3rem;line-height:1.55;text-align:left}
+.paper p{margin:0 0 14px;opacity:0;animation:fi 1.6s forwards}
+.gold{font:inherit;font-family:'Cormorant Garamond',Georgia,serif;font-weight:500;font-size:1.15rem;color:#4a3300;background:linear-gradient(#ffe3a0,#f5b955);border:0;border-radius:999px;padding:14px 38px;box-shadow:0 0 28px #f5b95577;cursor:pointer}
+.gold:active{transform:scale(.96)}
+#next{margin-top:22px;opacity:0;transition:opacity 1.5s}
+#next.show{opacity:1}
+#ui{justify-content:flex-end;padding-bottom:calc(36px + env(safe-area-inset-bottom,0px));pointer-events:auto}
+#hint{font-family:'Marck Script',cursive;color:#ffe0f0;margin-bottom:16px;min-height:1.5em;transition:opacity 1s}
+#nm{position:fixed;left:0;right:0;top:44%;transform:translateY(-50%);text-align:center;font-family:'Marck Script',cursive;font-size:clamp(2.4rem,12vw,3.6rem);color:#fff;text-shadow:0 0 24px #b9a4ff,0 0 6px #000;opacity:0;transition:opacity 2s;pointer-events:none}
+#nm.show{opacity:1}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<section class="screen" id="s1">
+  <div class="hello"><i id="n1"></i>,<br>тебе письмо</div>
+  <div class="env" id="env"><div class="flap"></div><div class="seal">♥</div></div>
+  <div class="sub" id="sub">открой это</div>
+</section>
+
+<section class="screen hide" id="s2">
+  <div class="paper" id="paper"></div>
+  <button class="gold" id="next">Дальше ✦</button>
+</section>
+
+<section class="screen hide" id="s3">
+  <div id="nm"></div>
+  <div id="ui" class="screen" style="pointer-events:none">
+    <div id="hint">покрути галактику</div>
+    <button class="gold" id="go" style="pointer-events:auto">Нажми!</button>
+  </div>
+</section>
+
+<script>
+// ✏️ Меняй здесь: имя, письмо, слова в галактике
+var NAME = "Гульназ";
+var LETTER = [
+  "{name}, я хотел сделать для тебя что-то особенное.",
+  "Ты человек, рядом с которым хочется улыбаться без причины.",
+  "С тобой даже самый обычный вечер становится тёплым и уютным.",
+  "У тебя удивительно доброе сердце, и я очень ценю это.",
+  "Пусть это маленькое письмо напомнит тебе, какая ты красивая, и снаружи, и внутри."
+];
+var WORDS = ["нежность","тепло","улыбка","уют","свет","солнышко","чудо","красивая","добрая","родная","моя","умница","счастье","звезда","{name}"];
+
+NAME = NAME.trim();
+function fx(s){ return s.split('{name}').join(NAME); }
+document.getElementById('n1').textContent = NAME;
+document.getElementById('nm').textContent = NAME;
+function $(i){ return document.getElementById(i); }
+function sleep(ms){ return new Promise(function(r){ setTimeout(r,ms); }); }
+
+/* ---------- canvas ---------- */
+var cv=$('c'), cx=cv.getContext('2d'), W, H, dpr=Math.min(devicePixelRatio||1,2);
+function size(){ W=innerWidth; H=innerHeight; cv.width=W*dpr; cv.height=H*dpr; cx.setTransform(dpr,0,0,dpr,0,0); }
+addEventListener('resize',size); size();
+
+var stars=[]; for(var i=0;i<130;i++) stars.push({x:Math.random(),y:Math.random(),r:Math.random()*1.4+.3,p:Math.random()*6.28});
+
+var N=640, P=[];
+for(var i=0;i<N;i++){
+  var t=Math.random()*6.2832, u=1-Math.pow(Math.random(),3)*.85;
+  P.push({
+    w:fx(WORDS[Math.floor(Math.random()*WORDS.length)]),
+    s:[9,11,13][i%3], arm:i%2, r:Math.pow(Math.random(),.75), j:Math.random()-.5, d:Math.random(),
+    hx:16*Math.pow(Math.sin(t),3)*u, hy:-(13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t))*u
+  });
+}
+P.sort(function(a,b){ return a.s-b.s; });
+
+var on=false, g=0, m=0, mt=0, rot=0, vel=0, tilt=.45, T=0;
+function sm(x){ x=Math.max(0,Math.min(1,x)); return x*x*(3-2*x); }
+
+function frame(){
+  T+=.016; cx.clearRect(0,0,W,H);
+  cx.textAlign='center'; cx.fillStyle='#fff';
+  stars.forEach(function(s){ cx.globalAlpha=.3+.7*Math.abs(Math.sin(T*.8+s.p)); cx.beginPath(); cx.arc(s.x*W,s.y*H,s.r,0,6.2832); cx.fill(); });
+  if(on){
+    g+=(1-g)*.025; m+=(mt-m)*.035; vel*=.95; rot+=.004+vel;
+    var cX=W/2, cY=H*.44, R=W*.46*sm(g), k=Math.min(W*.026,H*.02), beat=1+.03*Math.sin(T*3)*m;
+    var gl=cx.createRadialGradient(cX,cY,0,cX,cY,R*.45);
+    gl.addColorStop(0,'rgba(255,248,230,'+(.9*(1-m))+')'); gl.addColorStop(1,'rgba(255,248,230,0)');
+    cx.globalAlpha=1; cx.fillStyle=gl; cx.fillRect(0,0,W,H);
+    var last=0;
+    for(var i=0;i<N;i++){
+      var p=P[i], th=p.arm*Math.PI+p.r*5.2+p.j*.9*p.r+rot;
+      var gx=cX+p.r*R*Math.cos(th), gy=cY+p.r*R*Math.sin(th)*tilt;
+      var q=sm(m*1.7-p.d*.7);
+      var x=gx+(cX+p.hx*k*beat-gx)*q, y=gy+(cY+p.hy*k*beat-gy)*q;
+      if(p.s!==last){ cx.font=p.s+'px "Cormorant Garamond",serif'; last=p.s; }
+      cx.fillStyle=q>.5?'#ffffff':'#fff0f8';
+      cx.globalAlpha=Math.min(1,(.3+.7*(1-p.r))*sm(g*1.5));
+      cx.fillText(p.w,x,y);
+    }
+  }
+  requestAnimationFrame(frame);
+}
+frame();
+
+/* ---------- flow ---------- */
+setTimeout(function(){ $('env').classList.add('show'); $('sub').classList.add('show'); },3000);
+$('env').onclick=async function(){
+  this.classList.add('open'); $('sub').classList.remove('show');
+  await sleep(1300);
+  $('s1').classList.add('hide');
+  var pa=$('paper');
+  LETTER.forEach(function(t,i){ var e=document.createElement('p'); e.textContent=fx(t); e.style.animationDelay=(.8+i*1.8)+'s'; pa.appendChild(e); });
+  $('s2').classList.remove('hide');
+  setTimeout(function(){ $('next').classList.add('show'); },(LETTER.length*1.8+1.5)*1000);
+};
+$('next').onclick=function(){
+  $('s2').classList.add('hide'); $('s3').classList.remove('hide'); on=true;
+};
+$('go').onclick=function(e){
+  e.stopPropagation(); mt=1; $('go').style.display='none'; $('hint').textContent='';
+  setTimeout(function(){ $('nm').classList.add('show'); $('hint').textContent='проведи пальцем вбок, и она снова станет звёздами'; },2500);
+};
+
+/* ---------- drag ---------- */
+var sx=null, sy=0;
+$('s3').addEventListener('pointerdown',function(e){ sx=e.clientX; sy=e.clientY; });
+addEventListener('pointermove',function(e){
+  if(sx===null||!on) return;
+  var dx=e.clientX-sx, dy=e.clientY-sy; sx=e.clientX; sy=e.clientY;
+  if(mt===0){ vel=Math.max(-.08,Math.min(.08,vel+dx*.0012)); tilt=Math.max(.2,Math.min(1,tilt+dy*.003)); }
+});
+addEventListener('pointerup',function(e){
+  if(sx!==null && mt===1 && Math.abs(e.clientX-sx)>0){ }
+  sx=null;
+});
+var startX=0;
+$('s3').addEventListener('pointerdown',function(e){ startX=e.clientX; });
+addEventListener('pointerup',function(e){
+  if(mt===1 && Math.abs(e.clientX-startX)>50){
+    mt=0; $('nm').classList.remove('show'); $('hint').textContent='покрути галактику'; $('go').style.display='';
+  }
+});
+</script>
+</body>
+</html>
